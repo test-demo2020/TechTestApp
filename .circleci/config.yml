@@ -21,6 +21,7 @@ jobs:
               - "90:d3:be:73:40:1a:f2:8f:ea:d9:a3:88:4b:63:63:75"
       - run: echo $REMOTE_HOSTKEY >> ~/.ssh/known_hosts
 
+
   deploy:
     working_directory: /go/src/github.com/servian/TechTestApp
     docker:
@@ -52,7 +53,7 @@ jobs:
             
             mkdir -p dist
             
-            go build -v -o TechTestApp .x
+            go build -v -o TechTestApp .
             
             cp TechTestApp dist/
             cp -r assets dist/
@@ -62,14 +63,7 @@ jobs:
             export version=$(cat versionfile)
             
             zip -r "output/TechTestApp_${version}_linux64.zip" dist/*
-           
-      - run:
-          name: Deploy Golang Application
-          command: |
-            unzip /tmp/TechTestApp_${version}_linux64.zip -d /opt/gocode-devops/
-            mv -f /opt/gocode-devops/dist/* ../
-
-
+            
       - run:
           name: Release if new version
           command: |
