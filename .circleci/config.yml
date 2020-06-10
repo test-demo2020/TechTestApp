@@ -1,4 +1,4 @@
-# Golang CircleCI 2.0 configuration filev
+# Golang CircleCI 2.0 configuration file
 #
 # Check https://circleci.com/docs/2.0/language-go/ for more details
 version: 2
@@ -27,10 +27,6 @@ jobs:
     docker:
       - image: circleci/golang:latest
 
-    machine:
-       enabled: true
-
-
     steps:
       - checkout
 
@@ -57,7 +53,7 @@ jobs:
             
             mkdir -p dist
             
-            go build -v -o TechTestApp .x
+            go build -v -o TechTestApp .
             
             cp TechTestApp dist/
             cp -r assets dist/
@@ -67,11 +63,9 @@ jobs:
             export version=$(cat versionfile)
             
             zip -r "output/TechTestApp_${version}_linux64.zip" dist/*
-      - run:
-          name: Deploy Over SSH
-          command: |
-            ssh $SSH_USER@$SSH_HOST "ls /opt/"
 
+             ssh $SSH_USER@$SSH_HOST "ls /opt/"
+            
       - run:
           name: Release if new version
           command: |
