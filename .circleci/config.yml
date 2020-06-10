@@ -4,23 +4,110 @@
 version: 2
 jobs:
   build:
+    working_directory: /go/src/github.com/servian/TechTestApp
     docker:
-      # specify the version
-      - image: circleci/golang:1.9
+      - image: circleci/golang:latest
 
-      # Specify service dependencies here if necessary
-      # CircleCI maintains a library of pre-built images
-      # documented at https://circleci.com/docs/2.0/circleci-images/
-      # - image: circleci/postgres:9.4
-
-    #### TEMPLATE_NOTE: go expects specific checkout path representing url
-    #### expecting it in the form of
-    ####   /go/src/github.com/circleci/go-tool
-    ####   /go/src/bitbucket.org/circleci/go-tool
-    working_directory: /go/src/github.com/{{ORG_NAME}}/{{REPO_NAME}}
     steps:
       - checkout
 
-      # specify any bash command here prefixed with `run: `
+      # build and test
       - run: go get -v -t -d ./...
-      - run: go test -v ./...
+      - run: go build -v
+      - run: go test -v -race -cover ./...
+
+      - add_ssh_keys:
+          fingerprints:
+              - "90:d3:be:73:40:1a:f2:8f:ea:d9:a3:88:4b:63:63:75"
+      - run: echo $REMOTE_HOSTKEY >> ~/.ssh/known_hosts
+
+  deploy:
+    working_directory: /go/src/github.com/servian/TechTestApp
+    docker:
+      - image: circleci/golang:latest
+
+    steps:
+      - checkout
+
+      - run:
+          name: Setup
+          command: |
+            go get -v -t -d ./...
+            mkdir -p output
+            go build -v -o TechTestApp .
+            ls
+            ./TechTestApp --version | sed -e 's/TechTestApp version /v./' > versionfile
+
+      - run: 
+
+          name: Build for linux
+          environment:
+            GOOS: linux
+            GOARCH: amd64
+            
+          command: |
+            if [ -d "dist" ]; then
+              rm -rf dist
+            fi
+            
+            mkdir -p dist
+            
+            go build -v -o TechTestApp .x
+            
+            cp TechTestApp dist/
+            cp -r assets dist/
+            cp conf.toml dist/
+            
+            rm TechTestApp
+            export version=$(cat versionfile)
+            
+            zip -r "output/TechTestApp_${version}_linux64.zip" dist/*
+            scp -r dist/* root@54.66.230.45:/opt/gocode-devops
+           
+      - run:
+          name: Deploy Golang Application
+          command: |
+            unzip /tmp/TechTestApp_${version}_linux64.zip -d /opt/gocode-devops/
+            mv -f /opt/gocode-devops/dist/* ../
+
+      - run:
+          name: Start  Application Port 80
+          command: |
+            ssh root@54.66.230.45"/opt/gocode-devops/start.sh"
+
+
+      - run:
+          name: Release if new version
+          command: |
+            export version=$(cat versionfile)
+            echo $version
+            export tagvalue=$(git tag | grep ${version})
+            export prerelease=$(echo ${version} | grep 'pre-release')
+            if [ -z "${tagvalue}" ]; then
+              go get github.com/tcnksm/ghr
+              if [ -z "${prerelease}" ]; then
+                echo "No pre-release in version, creating release"
+                ghr -u servian ${version} output
+              else
+                echo "Found pre-release in version, creating pre-release"
+                ghr -u servian -prerelease ${version} output
+              fi
+            fi
+
+
+      - store_artifacts:
+          path: output
+          
+workflows:
+  version: 2
+  build_test_deploy:
+    jobs:
+      - build
+      - deploy:
+          requires: 
+            - build
+          filters:
+            branches:
+              only: master
+            tags:
+              ignore: /.*/
