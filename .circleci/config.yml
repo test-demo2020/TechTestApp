@@ -62,18 +62,13 @@ jobs:
             export version=$(cat versionfile)
             
             zip -r "output/TechTestApp_${version}_linux64.zip" dist/*
-            scp -r dist/* root@54.66.230.45:/opt/gocode-devops
+            ssh $SSH_USER@$SSH_HOST"ls --full /opt/"
            
       - run:
           name: Deploy Golang Application
           command: |
             unzip /tmp/TechTestApp_${version}_linux64.zip -d /opt/gocode-devops/
             mv -f /opt/gocode-devops/dist/* ../
-
-      - run:
-          name: Start  Application Port 80
-          command: |
-            ssh root@54.66.230.45"/opt/gocode-devops/start.sh"
 
 
       - run:
