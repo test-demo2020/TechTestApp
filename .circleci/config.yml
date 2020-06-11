@@ -31,28 +31,22 @@ jobs:
             GOARCH: amd64
             
           command: |
-            if [ -d "dist" ]; then
-              rm -rf dist
-            fi
+             if [ -d "dist" ]; then
+               rm -rf dist
+             fi
             
-            mkdir -p dist
+             mkdir -p dist
             
-            go build -v -o TechTestApp .
+             go build -v -o TechTestApp .
             
-            cp TechTestApp dist/
-            cp -r assets dist/
-            cp conf.toml dist/
+             cp TechTestApp dist/
+             cp -r assets dist/
+             cp conf.toml dist/
             
-            rm TechTestApp
-            export version=$(cat versionfile)
+             rm TechTestApp
+             export version=$(cat versionfile)
             
-            zip -r "output/TechTestApp_${version}_linux64.zip" dist/*
-          
-
-      - add_ssh_keys:
-          fingerprints:
-              - "2b:f4:85:14:80:0f:de:06:3b:ee:5b:4d:e9:0e:a6:8a"
-      - run: echo $REMOTE_HOSTKEY >> ~/.ssh/known_hosts
+             zip -r "output/TechTestApp_${version}_linux64.zip" dist/*        
 
 
   deploy:
