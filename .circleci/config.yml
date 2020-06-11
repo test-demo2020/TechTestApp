@@ -57,10 +57,13 @@ jobs:
       enabled: true
 
     steps:
-
+      - run: echo "====================部署开始=============================="
+      - attach_workspace:
+          at: /go/src/github.com/servian/TechTestApp
+      - run: pwd && ls -al
       - run:
-          name: ssh $SSH_USER@$SSH_HOST "ls /opt/"
-          command: |
+         name: Deploy Over SSH
+         command: |
             ssh $SSH_USER@$SSH_HOST "ls /opt/"
 
             
