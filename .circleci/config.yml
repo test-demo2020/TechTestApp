@@ -24,10 +24,9 @@ jobs:
             ls
             ./TechTestApp --version | sed -e 's/TechTestApp version /v./' > versionfile
 
-       - run: 
-
-          name: Build for linux
-          environment:
+      - run: 
+         name: Build for linux
+         environment:
             GOOS: linux
             GOARCH: amd64
             
