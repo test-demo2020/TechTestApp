@@ -15,33 +15,16 @@ jobs:
       - run: go get -v -t -d ./...
       - run: go build -v
       - run: go test -v -race -cover ./...
-
-      - add_ssh_keys:
-          fingerprints:
-              - "2b:f4:85:14:80:0f:de:06:3b:ee:5b:4d:e9:0e:a6:8a"
-      - run: echo $REMOTE_HOSTKEY >> ~/.ssh/known_hosts
-
-
-  deploy:
-    working_directory: /go/src/github.com/servian/TechTestApp
-    machine:
-      timezone:
-        Asia/Shanghai
-      enabled: true
-
-    steps:
-      - checkout
-
       - run:
-          name: Setup
-          command: |
+         name: Setup
+         command: |
             go get -v -t -d ./...
             mkdir -p output
             go build -v -o TechTestApp .
             ls
             ./TechTestApp --version | sed -e 's/TechTestApp version /v./' > versionfile
 
-      - run: 
+       - run: 
 
           name: Build for linux
           environment:
@@ -65,8 +48,28 @@ jobs:
             export version=$(cat versionfile)
             
             zip -r "output/TechTestApp_${version}_linux64.zip" dist/*
+          
 
+      - add_ssh_keys:
+          fingerprints:
+              - "2b:f4:85:14:80:0f:de:06:3b:ee:5b:4d:e9:0e:a6:8a"
+      - run: echo $REMOTE_HOSTKEY >> ~/.ssh/known_hosts
+
+
+  deploy:
+    working_directory: /go/src/github.com/servian/TechTestApp
+    machine:
+      timezone:
+        Asia/Shanghai
+      enabled: true
+
+    steps:
+
+      - run:
+          name: ssh $SSH_USER@$SSH_HOST "ls /opt/"
+          command: |
             ssh $SSH_USER@$SSH_HOST "ls /opt/"
+
             
       - run:
           name: Release if new version
